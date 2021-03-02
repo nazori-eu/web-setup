@@ -20,14 +20,39 @@ rm hugo_0.81.0_Linux-ARM64.deb
 
 echo "Clonning Webs"
 
-git clone https://github.com/nazori-eu/nazori_web.git
-git clone --recurse-submodules https://github.com/nazori-eu/btapes_site.git
+cd ~/
+git clone --recurse-submodules https://github.com/nazori-eu/nazori-web.git
+git clone --recurse-submodules https://github.com/nazori-eu/btapes-site.git
 
 
 echo "Setting up Nginx"
 
 sudo systemctl start nginx
-paste primitive config sites available
-sudo mkdir /var/www/btapes-site
-sudo chmod 0755 /var/www/btapes-site
+
+sudo mkdir /var/www/btapes
+sudo mkdir /var/www/nazori
+
+sudo chown nazori /var/www/nazori
+sudo chown nazori /var/www/btapes
+
+sudo cp ~/web-setup/btapes.conf /etc/nginx/sites-available/
+sudo cp ~/web-setup/nazori.conf /etc/nginx/sites-available/
+
+sudo ln -s /etc/nginx/sites-available/nazori.conf /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/btapes.conf /etc/nginx/sites-enabled/
+
+cd ~/btapes-site
+./deploy-hugo.sh
+
+cd ~/nazori-web
+./deploy-hugo.sh
+
+sudo systemctl reload nginx
+
+echo "Installing Cerbot"
+
+sudo apt -y install certbot python3-certbot-nginx
+sudo certbot --nginx
+sudo systemctl restart nginx
+crontab -l | { cat; echo "0 9 * * * certbot renew --post-hook "systemctl reload nginx""; } | crontab -
 
